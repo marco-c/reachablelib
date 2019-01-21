@@ -1,6 +1,7 @@
-from django.conf import settings  # noqa
-from celeryconf import app  # noqa
-from django.core.files.base import ContentFile
+# -*- coding: utf-8 -*-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this file,
+# You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import requests
 import subprocess
@@ -14,6 +15,8 @@ import hashlib
 class DeadCodeAnalysis():
     def __init__(self, prefix, source, target, progress_callback):
         self.logger = logging.getLogger("analysis")
+        self.logger.setLevel(logging.INFO)
+        self.logger.addHandler(logging.StreamHandler())
         self.progress_callback = progress_callback
 
         self.prefix = prefix
@@ -249,54 +252,23 @@ class DeadCodeAnalysis():
         return relations
 
 
-@app.task
-def perform_analysis(pk):
-    from reachable.models import MozsearchIndexFile, QueryResult, QUERY_TYPE  # noqa
-
-    result = QueryResult.objects.get(pk=pk)
-
-    query = result.query
-    indexfiles = result.indexfiles
-
+def perform_analysis(data_storage, index_files, source_path, target_path, update_progress):
     # TODO: Support multipe index files in analysis
-    indexfile = indexfiles.all()[0]
-    path_prefix = os.path.join(getattr(settings, 'DATA_STORAGE', None), os.path.splitext(indexfile.file.name)[0])
+    index_file = index_files[0]
+    path_prefix = os.path.splitext(index_file)[0]
 
-    target_path = query.target_path
-    source_path = query.source_path
+    print(path_prefix)
 
-    def update_progress(msg):
-        result = QueryResult.objects.get(pk=pk)
-        if result.progress:
-            result.progress += "\n%s" % msg
-        else:
-            result.progress = msg
-        result.save()
-
-    if query.type == QUERY_TYPE["dead-code"]:
-        analysis = DeadCodeAnalysis(path_prefix, source_path, target_path, update_progress)
-        analysis.run()
-        analysis_result = analysis.result()
-    else:
-        raise RuntimeError("NYI")
-
-    # Load the object again in case it has been changed by the analysis
-    result = QueryResult.objects.get(pk=pk)
-
-    # Save the result blob to disk
-    content = json.dumps(analysis_result, separators=(',', ':'))
-    h = hashlib.new('sha1')
-    h.update(content.encode('utf-8'))
-    result.file.save("%s.json" % h.hexdigest(), ContentFile(content))
-    result.save()
+    analysis = DeadCodeAnalysis(path_prefix, source_path, target_path, update_progress)
+    analysis.run()
+    return analysis.result()
 
 
-@app.task
-def fetch_and_unpack_latest_data():
-    from reachable.models import MozsearchIndexFile  # noqa
-
+def fetch_and_unpack_latest_data(data_storage):
     baseUrl = "https://index.taskcluster.net/v1/task/gecko.v2.mozilla-central.latest.firefox.%s64-searchfox-debug"
     artifactBaseUrl = "https://taskcluster-artifacts.net/%s/0/%s"
+
+    data = []
 
     for index_os in ['linux', 'win', 'macosx']:
         indexUrl = baseUrl % index_os
@@ -321,7 +293,7 @@ def fetch_and_unpack_latest_data():
         targetZipUrl = artifactBaseUrl % (taskId, "public/build/target.mozsearch-index.zip")
         targetZipBasename = "%s_%s" % (rev, index_os)
 
-        storage_path = os.path.join(getattr(settings, 'DATA_STORAGE', None), "data", targetZipBasename)
+        storage_path = os.path.join(data_storage, "data", targetZipBasename)
 
         os.makedirs(storage_path)
 
@@ -331,14 +303,14 @@ def fetch_and_unpack_latest_data():
                 if chunk:
                     f.write(chunk)
 
-        dbobj = MozsearchIndexFile()
-        dbobj.revision = rev
-        dbobj.os = index_os
-        dbobj.file.name = storage_path + ".zip"
-        dbobj.save()
-
         # TODO: This uses unzip, we might want to use Python instead. However, the archive
         # is a highly-compressed 300 MB file, that needs to be decompressed efficiently.
-        subprocess.check_call(["unzip", storage_path + ".zip"], cwd=storage_path)
+        subprocess.check_call(["unzip", storage_path + ".zip", '-d', storage_path])
 
-    return
+        data.append({
+            'revision': rev,
+            'os': index_os,
+            'file_name': storage_path + '.zip',
+        })
+
+    return data
