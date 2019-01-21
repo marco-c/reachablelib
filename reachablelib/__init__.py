@@ -257,8 +257,6 @@ def perform_analysis(data_storage, index_files, source_path, target_path, update
     index_file = index_files[0]
     path_prefix = os.path.splitext(index_file)[0]
 
-    print(path_prefix)
-
     analysis = DeadCodeAnalysis(path_prefix, source_path, target_path, update_progress)
     analysis.run()
     return analysis.result()
