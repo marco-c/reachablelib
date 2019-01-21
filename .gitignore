@@ -1,0 +1,6 @@
+*.pyc
+*model
+
+data/
+
+.pytest_cache/
