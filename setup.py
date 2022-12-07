@@ -32,4 +32,10 @@ setup(
     packages=find_packages(exclude=['contrib', 'docs', 'tests']),
     include_package_data=True,
     license='MPL2',
+    entry_points={
+        "console_scripts": [
+            "reachable-download = scripts.reachable_download:main",
+            "reachable = scripts.reachable:main",
+        ]
+    }
 )
