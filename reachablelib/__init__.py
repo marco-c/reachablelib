@@ -163,7 +163,7 @@ class DeadCodeAnalysis():
                     self.logger.debug("Node size: %s" % len(gdead.nodes()))
 
         # Remove any self-loops, so they don't show up as clusters
-        gdead.remove_edges_from(list(gdead.selfloop_edges()))
+        gdead.remove_edges_from(list(nx.selfloop_edges(gdead)))
 
         # Determine isolated nodes, we can just list them instead of visualizing
         self.isolates = list(nx.isolates(gdead))
@@ -174,7 +174,7 @@ class DeadCodeAnalysis():
 
         total = len(self.nodes) + len(self.isolates)
 
-        self.clusters = sorted(nx.weakly_connected_component_subgraphs(gdead), key=len, reverse=True)
+        self.clusters = sorted(nx.weakly_connected_components(gdead), key=len, reverse=True)
 
         self.logger.info("Analysis complete: %s nodes, %s of them in isolated subgraphs." % (total, len(self.nodes)))
 

@@ -1,2 +1,2 @@
 requests==2.20.1
-networkx>=2.2,<2.3
+networkx==2.8.8
