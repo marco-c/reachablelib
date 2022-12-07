@@ -310,6 +310,15 @@ def fetch_and_unpack_latest_data(data_storage):
         # is a highly-compressed 300 MB file, that needs to be decompressed efficiently.
         subprocess.check_call(["unzip", storage_path + ".zip", '-d', storage_path])
 
+        for (path, dirs, files) in os.walk(storage_path):
+            for file in files:
+                fp_file = os.path.join(path, file)
+                with open(fp_file, 'r') as fd:
+                    lines = fd.readlines()
+                lines = [x for x in lines if '"syntax"' in x]
+                with open(fp_file, 'w') as fd:
+                    fd.writelines(lines)
+
         data.append({
             'revision': rev,
             'os': index_os,
