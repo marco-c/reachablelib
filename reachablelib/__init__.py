@@ -258,8 +258,9 @@ class DeadCodeAnalysis():
         return relations
 
 
-def perform_analysis(data_storage, index_files, source_path, target_path, update_progress):
+def perform_analysis(index_files, source_path, target_path, update_progress):
     # TODO: Support multipe index files in analysis
+    assert len(index_files) == 1, "Currently only one index file is supported"
     index_file = index_files[0]
     path_prefix = os.path.splitext(index_file)[0]
 
