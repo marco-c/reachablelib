@@ -269,8 +269,8 @@ def perform_analysis(data_storage, index_files, source_path, target_path, update
 
 
 def fetch_and_unpack_latest_data(data_storage):
-    baseUrl = "https://index.taskcluster.net/v1/task/gecko.v2.mozilla-central.latest.firefox.%s64-searchfox-debug"
-    artifactBaseUrl = "https://taskcluster-artifacts.net/%s/0/%s"
+    baseUrl = "https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.v2.mozilla-central.latest.firefox.%s64-searchfox-debug"
+    artifactBaseUrl = "https://firefoxci.taskcluster-artifacts.net/%s/0/%s"
 
     data = []
 
