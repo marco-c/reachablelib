@@ -270,12 +270,12 @@ def perform_analysis(index_files, source_path, target_path, update_progress):
 
 
 def fetch_and_unpack_latest_data(data_storage):
-    baseUrl = "https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.v2.mozilla-central.latest.firefox.%s64-searchfox-debug"
+    baseUrl = "https://firefox-ci-tc.services.mozilla.com/api/index/v1/task/gecko.v2.mozilla-central.latest.firefox.%s-searchfox-debug"
     artifactBaseUrl = "https://firefoxci.taskcluster-artifacts.net/%s/0/%s"
 
     data = []
 
-    for index_os in ['linux', 'win', 'macosx']:
+    for index_os in ['linux64', 'win64', 'macosx64', 'android-armv7']:
         indexUrl = baseUrl % index_os
         indexRequest = requests.get(indexUrl)
         if not indexRequest.ok:
